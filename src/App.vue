@@ -30,13 +30,18 @@ const CalculateWinner = (squares) => {
 
 const winner = computed(() => CalculateWinner(board.value.flat()));
 
+// Check if all cells are filled and there's no winner
+const isDraw = computed(() => {
+  return board.value.flat().every(cell => cell !== '') && !winner.value;
+});
+
 const MakeMove = (x, y) => {
-  if (winner.value || board.value[x][y] !== '') return;
+  if (winner.value || isDraw.value || board.value[x][y] !== '') return;
 
   board.value[x][y] = player.value;
   player.value = player.value === 'X' ? 'O' : 'X';
 
-  if (!winner.value && player.value === 'O') {
+  if (!winner.value && !isDraw.value && player.value === 'O') {
     MakeAIMove();
   }
 };
@@ -106,7 +111,7 @@ const ResetGame = () => {
   <main class="pt-8 text-center dark:bg-gray-800 min-h-screen dark:text-white">
     <h1 class="mb-8 text-3xl font-bold uppercase">Tic Tac Toe</h1>
 
-    <h3 v-if="!winner" class="text-xl mb-4">ถึงตาผู้เล่น {{ player }}</h3>
+    <h3 v-if="!winner && !isDraw" class="text-xl mb-4">ถึงตาผู้เล่น {{ player }}</h3>
 
     <div class="flex flex-col items-center mb-8">
       <div v-for="(row, x) in board" :key="x" class="flex">
@@ -124,6 +129,7 @@ const ResetGame = () => {
     </div>
 
     <h2 v-if="winner" class="text-6xl font-bold mb-8">ผู้เล่น '{{ winner }}' ชนะ!</h2>
+    <h2 v-else-if="isDraw" class="text-6xl font-bold mb-8">เสมอ!</h2>
 
     <button
       @click="ResetGame"
