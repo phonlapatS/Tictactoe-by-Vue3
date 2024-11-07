@@ -8,6 +8,7 @@ const board = ref([
   ["", "", ""],
 ]);
 
+// หาผู้ชนะ
 const CalculateWinner = (squares) => {
   const lines = [
     [0, 1, 2],
@@ -30,11 +31,12 @@ const CalculateWinner = (squares) => {
 
 const winner = computed(() => CalculateWinner(board.value.flat()));
 
-// Check if all cells are filled and there's no winner
+// ตรวจสอบว่า "เสมอ" หรือไม่
 const isDraw = computed(() => {
   return board.value.flat().every(cell => cell !== '') && !winner.value;
 });
 
+// ให้ Player เดิน
 const MakeMove = (x, y) => {
   if (winner.value || isDraw.value || board.value[x][y] !== '') return;
 
@@ -46,50 +48,67 @@ const MakeMove = (x, y) => {
   }
 };
 
+// ฟังก์ชั่นให้ AI เดิน
 const MakeAIMove = () => {
+  // เพื่อหาการเดินที่ดีที่สุดของ AI
   const findBestMove = (mark) => {
+    // ลูปวนตรวจสอบทุกช่องในกระดาน
     for (let x = 0; x < 3; x++) {
       for (let y = 0; y < 3; y++) {
+        // ตรวจสอบว่ามีช่องว่างอยู่หรือไม่
         if (board.value[x][y] === '') {
+          // จำลองการลงหมากในช่องว่าง
           board.value[x][y] = mark;
+          // ตรวจสอบว่าการเดินช่องนี้ทำให้ชนะหรือไม่
           if (CalculateWinner(board.value.flat()) === mark) {
+            // รีเซ็ตกระดานก่อนส่งคืนตำแหน่งที่ดีที่สุด
             board.value[x][y] = '';
-            return { x, y };
+            return { x, y }; // ส่งตำแหน่งการเดินที่ดีที่สุด
           }
+          // รีเซ็ตช่องนั้นให้ว่างถ้าการเดินนั้นไม่ทำให้ชนะ
           board.value[x][y] = '';
         }
       }
     }
-    return null;
+    return null; // ถ้าไม่มีการเดินที่ทำให้ชนะ คืนค่าเป็น null
   };
 
+  // ลองหาตำแหน่งที่ทำให้ AI ชนะ
   let move = findBestMove("O");
+
+  // ถ้าไม่มีตำแหน่งที่ทำให้ AI ชนะ ให้บล็อกการเดินของ player ที่อาจจะชนะ
   if (!move) {
     move = findBestMove("X");
   }
+
+  // ถ้าไม่มีการเดินที่ทำให้ชนะหรือบล็อกได้ ให้เลือกช่องตรงกลางถ้าว่างอยู่
   if (!move) {
     if (board.value[1][1] === '') {
       move = { x: 1, y: 1 };
     }
   }
+
+  // ถ้าช่องตรงกลางไม่ว่าง ให้เลือกช่องอื่นๆ
   if (!move) {
     for (let x = 0; x < 3; x++) {
       for (let y = 0; y < 3; y++) {
         if (board.value[x][y] === '') {
           move = { x, y };
-          break;
+          break; // เจอช่องว่างแล้วออกจากลูป
         }
       }
       if (move) break;
     }
   }
 
+  // ถ้าหาตำแหน่งได้แล้ว ให้ AI เดินและสลับเป็นตาของ player ต่อ
   if (move) {
     board.value[move.x][move.y] = 'O';
     player.value = 'X';
   }
 };
 
+// รีเซ็ตเกม
 const ResetGame = () => {
   board.value = [
     ["", "", ""],
@@ -97,10 +116,10 @@ const ResetGame = () => {
     ["", "", ""],
   ];
 
-  // Randomize the starting player
+  // สุ่มว่าฝั่งไหนจะเริ่มก่อน X หรือ O
   player.value = Math.random() < 0.5 ? "X" : "O";
 
-  // If AI is chosen to start, make the first move
+  // ถ้า AI ถูกเลือกให้เริ่มก่อน ให้ AI เดินทันที
   if (player.value === "O") {
     MakeAIMove();
   }
