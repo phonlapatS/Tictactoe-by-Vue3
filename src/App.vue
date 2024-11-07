@@ -31,17 +31,59 @@ const CalculateWinner = (squares) => {
 const winner = computed(() => CalculateWinner(board.value.flat()));
 
 const MakeMove = (x, y) => {
-  // หยุดการทำงานถ้ามีผู้ชนะแล้ว
-  if (winner.value) return;
-  // หยุดการทำงานถ้ามีการคลิกช่องที่ไม่ว่างเปล่า
-  if (board.value[x][y] !== '') return;
+  if (winner.value || board.value[x][y] !== '') return;
 
-  // อัปเดตบอร์ด
   board.value[x][y] = player.value;
-  // สลับผู้เล่น
   player.value = player.value === 'X' ? 'O' : 'X';
+
+  if (!winner.value && player.value === 'O') {
+    MakeAIMove();
+  }
 };
 
+const MakeAIMove = () => {
+  const findBestMove = (mark) => {
+    for (let x = 0; x < 3; x++) {
+      for (let y = 0; y < 3; y++) {
+        if (board.value[x][y] === '') {
+          board.value[x][y] = mark;
+          if (CalculateWinner(board.value.flat()) === mark) {
+            board.value[x][y] = '';
+            return { x, y };
+          }
+          board.value[x][y] = '';
+        }
+      }
+    }
+    return null;
+  };
+
+  let move = findBestMove("O");
+  if (!move) {
+    move = findBestMove("X");
+  }
+  if (!move) {
+    if (board.value[1][1] === '') {
+      move = { x: 1, y: 1 };
+    }
+  }
+  if (!move) {
+    for (let x = 0; x < 3; x++) {
+      for (let y = 0; y < 3; y++) {
+        if (board.value[x][y] === '') {
+          move = { x, y };
+          break;
+        }
+      }
+      if (move) break;
+    }
+  }
+
+  if (move) {
+    board.value[move.x][move.y] = 'O';
+    player.value = 'X';
+  }
+};
 
 const ResetGame = () => {
   board.value = [
@@ -49,7 +91,14 @@ const ResetGame = () => {
     ["", "", ""],
     ["", "", ""],
   ];
-  player.value = "X";
+
+  // Randomize the starting player
+  player.value = Math.random() < 0.5 ? "X" : "O";
+
+  // If AI is chosen to start, make the first move
+  if (player.value === "O") {
+    MakeAIMove();
+  }
 };
 </script>
 
@@ -57,10 +106,10 @@ const ResetGame = () => {
   <main class="pt-8 text-center dark:bg-gray-800 min-h-screen dark:text-white">
     <h1 class="mb-8 text-3xl font-bold uppercase">Tic Tac Toe</h1>
 
-    <h3 class="text-xl mb-4">Player {{ player }}'s turn'</h3>
+    <h3 v-if="!winner" class="text-xl mb-4">ถึงตาผู้เล่น {{ player }}</h3>
 
     <div class="flex flex-col items-center mb-8">
-      <div v-for="(row, x) in board" :key="X" class="flex">
+      <div v-for="(row, x) in board" :key="x" class="flex">
         <div
           v-for="(cell, y) in row"
           :key="y"
@@ -74,13 +123,13 @@ const ResetGame = () => {
       </div>
     </div>
 
-    <h2 v-if="winner" class="text-6xl font-bold mb-8">Player '{{ winner }}' wins!</h2>
+    <h2 v-if="winner" class="text-6xl font-bold mb-8">ผู้เล่น '{{ winner }}' ชนะ!</h2>
 
     <button
       @click="ResetGame"
       class="px-4 py-2 bg-pink-500 rounded uppercase font-bold hover:bg-pink-600 duration-300"
     >
-      Reset Game
+      เริ่มใหม่
     </button>
   </main>
 </template>
